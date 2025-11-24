@@ -44,5 +44,8 @@ Thumbs.db
 logs/
 checkpoints/
 
+# Training results
+results_*.csv
+
 # NumPy data files (optional - uncomment if you want to ignore .npy files)
 # *.npy

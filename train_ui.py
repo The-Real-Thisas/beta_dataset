@@ -1,6 +1,7 @@
 import os
 import glob
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.layers import (
     Input, Conv2D, BatchNormalization, Dense, Dropout, Flatten, 
@@ -200,8 +201,11 @@ if __name__ == '__main__':
         exit()
 
     print(f"Found {len(all_subjects)} subjects. Starting UI (LOGO) Training...")
-    
+
     fold_accuracies = []
+
+    # List to store results for CSV
+    fold_results = []
 
     # 2. Leave-One-Group-Out Loop
     # We iterate through each subject, setting them as the TEST subject once
@@ -230,9 +234,18 @@ if __name__ == '__main__':
         # Evaluate
         loss, acc = model.evaluate(test_ds, verbose=0)
         print(f"\n>>> Accuracy for {test_subject}: {acc*100:.2f}%")
-        
+
         fold_accuracies.append(acc)
-        
+
+        # Save fold result
+        fold_results.append({
+            'fold': i + 1,
+            'test_subject': test_subject,
+            'num_train_subjects': len(train_subjects),
+            'accuracy': acc,
+            'loss': loss
+        })
+
         # Running Average
         print(f"OVERALL AVERAGE SO FAR: {np.mean(fold_accuracies)*100:.2f}%")
 
@@ -247,3 +260,23 @@ if __name__ == '__main__':
     print(f"FINAL AVERAGE UI ACCURACY ({len(all_subjects)} subjects): {np.mean(fold_accuracies)*100:.2f}%")
     print(f"STD DEV: {np.std(fold_accuracies)*100:.2f}%")
     print("="*40)
+
+    # 4. Save results to CSV
+    # Save fold-level results
+    fold_df = pd.DataFrame(fold_results)
+    fold_csv = 'results_ui_folds.csv'
+    fold_df.to_csv(fold_csv, index=False)
+    print(f"\n✅ Fold results saved to: {fold_csv}")
+
+    # Save overall summary
+    summary_df = pd.DataFrame([{
+        'total_folds': len(all_subjects),
+        'mean_accuracy': np.mean(fold_accuracies),
+        'std_accuracy': np.std(fold_accuracies),
+        'batch_size': BATCH_SIZE,
+        'epochs': EPOCHS,
+        'learning_rate': LEARNING_RATE
+    }])
+    summary_csv = 'results_ui_summary.csv'
+    summary_df.to_csv(summary_csv, index=False)
+    print(f"✅ Summary saved to: {summary_csv}")

@@ -1,6 +1,7 @@
 import os
 import glob
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.layers import (
     Input, Conv2D, BatchNormalization, Dense, Dropout, Flatten, 
@@ -128,8 +129,12 @@ if __name__ == '__main__':
     all_subjects.sort()
     
     print(f"Found {len(all_subjects)} subjects. Starting UD Training...")
-    
+
     final_subject_accuracies = []
+
+    # Lists to store results for CSV
+    fold_results = []
+    subject_results = []
 
     # 2. Loop through each subject individually
     for sub_idx, subject in enumerate(all_subjects):
@@ -191,13 +196,30 @@ if __name__ == '__main__':
             fold_accs.append(acc)
             print(f" Acc: {acc*100:.2f}%")
 
+            # Save fold result
+            fold_results.append({
+                'subject': subject,
+                'fold': fold + 1,
+                'accuracy': acc,
+                'loss': loss
+            })
+
         # Free model after all folds complete
         del model
 
         # Average accuracy for this subject
         avg_acc = np.mean(fold_accs)
+        std_acc = np.std(fold_accs)
         final_subject_accuracies.append(avg_acc)
         print(f"  >> Average Accuracy for {subject}: {avg_acc*100:.2f}%")
+
+        # Save subject summary
+        subject_results.append({
+            'subject': subject,
+            'mean_accuracy': avg_acc,
+            'std_accuracy': std_acc,
+            'num_folds': N_FOLDS
+        })
 
         # Cleanup TensorFlow session after all folds for this subject
         tf.keras.backend.clear_session()
@@ -207,3 +229,30 @@ if __name__ == '__main__':
     print(f"FINAL AVERAGE UD ACCURACY ({len(all_subjects)} subjects): {np.mean(final_subject_accuracies)*100:.2f}%")
     print(f"STD DEV: {np.std(final_subject_accuracies)*100:.2f}%")
     print("="*40)
+
+    # 5. Save results to CSV
+    # Save fold-level results
+    fold_df = pd.DataFrame(fold_results)
+    fold_csv = 'results_ud_folds.csv'
+    fold_df.to_csv(fold_csv, index=False)
+    print(f"\n✅ Fold results saved to: {fold_csv}")
+
+    # Save subject-level results
+    subject_df = pd.DataFrame(subject_results)
+    subject_csv = 'results_ud_subjects.csv'
+    subject_df.to_csv(subject_csv, index=False)
+    print(f"✅ Subject results saved to: {subject_csv}")
+
+    # Save overall summary
+    summary_df = pd.DataFrame([{
+        'total_subjects': len(all_subjects),
+        'total_folds': len(all_subjects) * N_FOLDS,
+        'mean_accuracy': np.mean(final_subject_accuracies),
+        'std_accuracy': np.std(final_subject_accuracies),
+        'batch_size': BATCH_SIZE,
+        'epochs': EPOCHS,
+        'learning_rate': LEARNING_RATE
+    }])
+    summary_csv = 'results_ud_summary.csv'
+    summary_df.to_csv(summary_csv, index=False)
+    print(f"✅ Summary saved to: {summary_csv}")
