@@ -160,34 +160,39 @@ if __name__ == '__main__':
         # 3. 10-Fold Cross Validation for THIS subject
         kf = KFold(n_splits=N_FOLDS, shuffle=True, random_state=42)
         fold_accs = []
-        
+
+        # Build model once and reuse across all folds (just reset weights)
+        sgd = optimizers.SGD(learning_rate=LEARNING_RATE, momentum=0.9, nesterov=False)
+        model = cnn_model(INPUT_SHAPE, decay=0.001)
+        model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
+
+        # Save initial weights for resetting between folds
+        initial_weights = model.get_weights()
+
         for fold, (train_idx, test_idx) in enumerate(kf.split(f1)):
             print(f"  Fold {fold+1}/{N_FOLDS}...", end="")
-            
+
+            # Reset model weights to fresh random values for this fold
+            if fold > 0:
+                model.set_weights(initial_weights)
+
             # Split data
             X_train = [f1[train_idx], f2[train_idx], f3[train_idx]]
             y_train = labels_onehot[train_idx]
-            
+
             X_test = [f1[test_idx], f2[test_idx], f3[test_idx]]
             y_test = labels_onehot[test_idx]
-            
-            # Build fresh model
-            # Modern optimizer syntax
-            sgd = optimizers.SGD(learning_rate=LEARNING_RATE, momentum=0.9, nesterov=False)
-            
-            model = cnn_model(INPUT_SHAPE, decay=0.001)
-            model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
-            
+
             # Train
             model.fit(X_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE, verbose=0)
-            
+
             # Evaluate
             loss, acc = model.evaluate(X_test, y_test, verbose=0)
             fold_accs.append(acc)
             print(f" Acc: {acc*100:.2f}%")
 
-            # Free Python memory (model will be rebuilt next fold)
-            del model
+        # Free model after all folds complete
+        del model
 
         # Average accuracy for this subject
         avg_acc = np.mean(fold_accs)
