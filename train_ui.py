@@ -235,10 +235,12 @@ if __name__ == '__main__':
         
         # Running Average
         print(f"OVERALL AVERAGE SO FAR: {np.mean(fold_accuracies)*100:.2f}%")
-        
-        # Cleanup
-        tf.keras.backend.clear_session()
+
+        # Free model memory (TensorFlow will handle GPU cleanup)
         del model
+
+    # Cleanup TensorFlow session after all folds complete
+    tf.keras.backend.clear_session()
 
     # 3. Final Results
     print("\n" + "="*40)
