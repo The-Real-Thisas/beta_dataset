@@ -185,15 +185,17 @@ if __name__ == '__main__':
             loss, acc = model.evaluate(X_test, y_test, verbose=0)
             fold_accs.append(acc)
             print(f" Acc: {acc*100:.2f}%")
-            
-            # Cleanup
-            tf.keras.backend.clear_session()
+
+            # Free Python memory (model will be rebuilt next fold)
             del model
-            
+
         # Average accuracy for this subject
         avg_acc = np.mean(fold_accs)
         final_subject_accuracies.append(avg_acc)
         print(f"  >> Average Accuracy for {subject}: {avg_acc*100:.2f}%")
+
+        # Cleanup TensorFlow session after all folds for this subject
+        tf.keras.backend.clear_session()
 
     # 4. Final Results
     print("\n" + "="*40)
