@@ -1,0 +1,48 @@
+# Dataset folders
+dataset/
+Processed_BETA_UI/
+Processed_BETA_UD/
+
+# Compressed files
+*.zip
+*.tar.gz
+*.tar
+*.rar
+*.7z
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Model checkpoints and logs
+*.h5
+*.hdf5
+*.ckpt
+logs/
+checkpoints/
+
+# NumPy data files (optional - uncomment if you want to ignore .npy files)
+# *.npy
